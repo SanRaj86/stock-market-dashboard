@@ -1,14 +1,4 @@
-import streamlit as st
-from alpha_vantage.timeseries import TimeSeries
-import pandas as pd
-
-st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
-
-# Now you're free to call st.write, st.title, etc
-st.title("Welcome to your Stock Dashboard!")
-
-
-
+# --- IMPORTS ---
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,18 +6,22 @@ from alpha_vantage.timeseries import TimeSeries
 import requests
 from datetime import datetime, timedelta
 
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
+
+# --- TITLE ---
+st.title("Welcome to your Stock Dashboard!")
+
 # --- CONFIG ---
 API_KEY = st.secrets["ALPHA_VANTAGE_KEY"]
 NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
-
-st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
 
 # --- FUNCTION TO FETCH STOCK DATA ---
 @st.cache_data(ttl=86400)
 def fetch_data(ticker, start, end):
     ts = TimeSeries(key=API_KEY, output_format="pandas")
     try:
-        data, meta_data = ts.get_daily(symbol=ticker,outputsize="compact")
+        data, meta_data = ts.get_daily(symbol=ticker, outputsize="compact")
         data.index = pd.to_datetime(data.index)
         data = data.sort_index()
         filtered_data = data.loc[(data.index >= pd.to_datetime(start)) & (data.index <= pd.to_datetime(end))]
@@ -57,9 +51,18 @@ def backtest_sma(data, short_window, long_window):
     data["SMA_Short"] = data["4. close"].rolling(window=short_window).mean()
     data["SMA_Long"] = data["4. close"].rolling(window=long_window).mean()
     data["Signal"] = 0
-    data["Signal"][short_window:] = \
-        (data["SMA_Short"][short_window:] > data["SMA_Long"][short_window:]).astype(int)
+    data["Signal"].iloc[short_window:] = \
+        (data["SMA_Short"].iloc[short_window:] > data["SMA_Long"].iloc[short_window:]).astype(int)
     data["Position"] = data["Signal"].diff()
 
     # Plot strategy
     fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(data.index, data["4. close"], label="Price", color="blue")
+    ax.plot(data.index, data["SMA_Short"], label=f"SMA {short_window}", color="green")
+    ax.plot(data.index, data["SMA_Long"], label=f"SMA {long_window}", color="red")
+    ax.legend()
+    ax.set_title("Simple Moving Average Crossover Strategy")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price")
+    ax.grid(True)
+    st.pyplot(fig)
