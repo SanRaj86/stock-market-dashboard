@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
 
 # --- TITLE ---
-st.title("Welcome to your Stock Dashboard!")
+st.title("📊 Stock Market Dashboard")
 
-# --- CONFIG ---
+# --- API KEYS ---
 API_KEY = st.secrets["ALPHA_VANTAGE_KEY"]
 NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
 
@@ -41,7 +41,7 @@ def fetch_news(ticker):
         st.error("Failed to fetch news")
         return []
 
-# --- PORTFOLIO TRACKER ---
+# --- PORTFOLIO VALUE CALCULATION ---
 def calculate_portfolio_value(data, shares_owned):
     latest_price = data["4. close"].iloc[-1]
     return latest_price * shares_owned
@@ -61,8 +61,50 @@ def backtest_sma(data, short_window, long_window):
     ax.plot(data.index, data["SMA_Short"], label=f"SMA {short_window}", color="green")
     ax.plot(data.index, data["SMA_Long"], label=f"SMA {long_window}", color="red")
     ax.legend()
-    ax.set_title("Simple Moving Average Crossover Strategy")
+    ax.set_title("📈 SMA Crossover Strategy")
     ax.set_xlabel("Date")
     ax.set_ylabel("Price")
     ax.grid(True)
     st.pyplot(fig)
+
+# --- SIDEBAR INPUTS ---
+st.sidebar.header("⚙️ Settings")
+
+ticker = st.sidebar.text_input("Stock Ticker Symbol", value="AAPL").upper()
+start_date = st.sidebar.date_input("Start Date", value=datetime.today() - timedelta(days=60))
+end_date = st.sidebar.date_input("End Date", value=datetime.today())
+
+shares_owned = st.sidebar.number_input("Number of Shares Owned", value=10, min_value=1)
+
+short_window = st.sidebar.slider("Short SMA Window", min_value=5, max_value=50, value=20)
+long_window = st.sidebar.slider("Long SMA Window", min_value=20, max_value=200, value=50)
+
+if st.sidebar.button("🔍 Load Data"):
+    data = fetch_data(ticker, start_date, end_date)
+
+    if not data.empty:
+        # Current Price
+        latest_price = data["4. close"].iloc[-1]
+        st.subheader(f"📈 Latest Closing Price for **{ticker}**: ${latest_price:.2f}")
+
+        # Price Chart
+        st.line_chart(data["4. close"])
+
+        # Portfolio Value
+        portfolio_value = calculate_portfolio_value(data, shares_owned)
+        st.success(f"💰 Portfolio Value: **${portfolio_value:,.2f}**")
+
+        # SMA Backtest
+        st.subheader("📊 SMA Strategy Backtest")
+        backtest_sma(data, short_window, long_window)
+
+        # News Section
+        st.subheader(f"📰 Latest News on {ticker}")
+        articles = fetch_news(ticker)
+        for article in articles:
+            st.markdown(f"**[{article['title']}]({article['url']})**")
+            st.write(f"_Published on: {article['publishedAt']}_")
+            st.write(article["description"])
+            st.write("---")
+    else:
+        st.error("No data found for this selection.")
