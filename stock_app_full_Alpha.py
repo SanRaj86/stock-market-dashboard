@@ -6,8 +6,8 @@ import requests
 from datetime import datetime, timedelta
 
 # --- CONFIG ---
-API_KEY = "7DUI9BT9YC0EE3J0"
-NEWS_API_KEY = "eae1f517baad44b79c68847ebab2eda0"
+API_KEY = st.secrets["ALPHA_VANTAGE_KEY"]
+NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
 st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
 
 # --- FUNCTION TO FETCH STOCK DATA ---
