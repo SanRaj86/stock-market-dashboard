@@ -7,7 +7,7 @@ from newsapi import NewsApiClient
 import requests
 
 # Set up NewsAPI (get your API key from https://newsapi.org)
-NEWSAPI_KEY = 'YOUR_NEWSAPI_KEY'
+NEWSAPI_KEY = 'eae1f517baad44b79c68847ebab2eda0'
 newsapi = NewsApiClient(api_key=NEWSAPI_KEY)
 
 # Web App Title
@@ -62,7 +62,7 @@ else:
     st.metric(label=f"Portfolio Value ({shares_owned} shares)", value=f"${portfolio_value:,.2f}")
 
     # News Sentiment (if API key provided)
-    if NEWSAPI_KEY != 'YOUR_NEWSAPI_KEY':
+    if NEWSAPI_KEY != 'eae1f517baad44b79c68847ebab2eda0':
         st.subheader(f"Latest News for {ticker}")
         try:
             articles = newsapi.get_everything(q=ticker, language='en', page_size=5)
