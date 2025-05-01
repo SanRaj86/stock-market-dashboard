@@ -1,6 +1,11 @@
 import streamlit as st
+from alpha_vantage.timeseries import TimeSeries
+import pandas as pd
 
-st.write("Alpha Vantage Key:", st.secrets.get("ALPHA_VANTAGE_KEY"))
+st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
+
+# Now you're free to call st.write, st.title, etc
+st.title("Welcome to your Stock Dashboard!")
 
 
 
