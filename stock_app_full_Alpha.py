@@ -1,4 +1,10 @@
 import streamlit as st
+
+st.write("Alpha Vantage Key:", st.secrets.get("ALPHA_VANTAGE_KEY"))
+
+
+
+import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from alpha_vantage.timeseries import TimeSeries
@@ -8,6 +14,7 @@ from datetime import datetime, timedelta
 # --- CONFIG ---
 API_KEY = st.secrets["ALPHA_VANTAGE_KEY"]
 NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
+
 st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
 
 # --- FUNCTION TO FETCH STOCK DATA ---
