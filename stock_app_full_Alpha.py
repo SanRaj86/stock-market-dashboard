@@ -15,7 +15,7 @@ st.set_page_config(page_title="Stock Market Dashboard", layout="wide")
 def fetch_data(ticker, start, end):
     ts = TimeSeries(key=API_KEY, output_format="pandas")
     try:
-        data, meta_data = ts.get_daily(symbol=ticker, outputsize="full",outputsize="compact")
+        data, meta_data = ts.get_daily(symbol=ticker,outputsize="compact")
         data.index = pd.to_datetime(data.index)
         data = data.sort_index()
         filtered_data = data.loc[(data.index >= pd.to_datetime(start)) & (data.index <= pd.to_datetime(end))]
