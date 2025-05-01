@@ -1,0 +1,106 @@
+import streamlit as st
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+from newsapi import NewsApiClient
+import requests
+
+# Set up NewsAPI (get your API key from https://newsapi.org)
+NEWSAPI_KEY = 'YOUR_NEWSAPI_KEY'
+newsapi = NewsApiClient(api_key=NEWSAPI_KEY)
+
+# Web App Title
+st.title("📈 Advanced Stock Market Dashboard")
+
+# Sidebar Inputs
+st.sidebar.header("Configuration")
+ticker = st.sidebar.text_input("Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
+start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2023-01-01"))
+end_date = st.sidebar.date_input("End Date", pd.to_datetime(datetime.now()))
+ma_period = st.sidebar.slider("Moving Average (days)", 5, 50, 20)
+
+# Portfolio Input
+st.sidebar.header("Portfolio Tracker")
+shares_owned = st.sidebar.number_input(f"How many shares of {ticker} do you own?", min_value=0, value=10)
+
+# Fetch Stock Data
+@st.cache_data(ttl=300)
+def fetch_data(ticker, start, end):
+    stock = yf.Ticker(ticker)
+    data = stock.history(start=start, end=end)
+    return data
+
+data = fetch_data(ticker, start_date, end_date)
+
+if data.empty:
+    st.error("No data found. Check the ticker symbol or date range.")
+else:
+    # Display Data
+    st.subheader(f"{ticker} Stock Data")
+    st.dataframe(data.tail())
+
+    # Plot Closing Price and Moving Average
+    st.subheader("Price & Moving Average")
+    data['MA'] = data['Close'].rolling(window=ma_period).mean()
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(data.index, data['Close'], label='Close Price')
+    ax.plot(data.index, data['MA'], label=f'{ma_period}-Day MA', color='orange')
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price (USD)")
+    ax.legend()
+    st.pyplot(fig)
+
+    # Real-Time Price
+    st.subheader("Real-Time Price")
+    live_price = yf.Ticker(ticker).history(period='1m').tail(1)['Close'].values[0]
+    st.metric(label=f"{ticker} Current Price", value=f"${live_price:.2f}")
+
+    # Portfolio Value
+    portfolio_value = shares_owned * live_price
+    st.metric(label=f"Portfolio Value ({shares_owned} shares)", value=f"${portfolio_value:,.2f}")
+
+    # News Sentiment (if API key provided)
+    if NEWSAPI_KEY != 'YOUR_NEWSAPI_KEY':
+        st.subheader(f"Latest News for {ticker}")
+        try:
+            articles = newsapi.get_everything(q=ticker, language='en', page_size=5)
+            for article in articles['articles']:
+                st.markdown(f"**[{article['title']}]({article['url']})**  \n*{article['source']['name']} - {article['publishedAt'][:10]}*  \n{article['description']}")
+                st.write("---")
+        except Exception as e:
+            st.warning(f"Could not fetch news: {e}")
+
+    # Simple Backtesting Strategy
+    st.subheader("📈 Backtest: Moving Average Crossover")
+    short_window = st.slider("Short MA", 5, 30, 10)
+    long_window = st.slider("Long MA", 20, 100, 50)
+
+    data['Short_MA'] = data['Close'].rolling(window=short_window).mean()
+    data['Long_MA'] = data['Close'].rolling(window=long_window).mean()
+
+    data.dropna(inplace=True)
+    data['Position'] = 0
+    data.loc[data['Short_MA'] > data['Long_MA'], 'Position'] = 1
+    data.loc[data['Short_MA'] < data['Long_MA'], 'Position'] = -1
+
+    data['Returns'] = data['Close'].pct_change()
+    data['Strategy_Returns'] = data['Returns'] * data['Position'].shift(1)
+
+    cumulative_strategy_return = (1 + data['Strategy_Returns']).cumprod()
+    cumulative_market_return = (1 + data['Returns']).cumprod()
+
+    fig_bt, ax_bt = plt.subplots(figsize=(10, 4))
+    ax_bt.plot(cumulative_strategy_return, label='Strategy Return')
+    ax_bt.plot(cumulative_market_return, label='Market Return')
+    ax_bt.set_title("Backtest: Strategy vs Market")
+    ax_bt.legend()
+    st.pyplot(fig_bt)
+
+    st.write("**Note:** This is a basic backtest. No slippage, fees, or realistic execution modeled.")
+
+    # Download Data
+    st.subheader("📄 Download Data")
+    csv = data.to_csv().encode()
+    st.download_button("Download CSV", data=csv, file_name=f"{ticker}_data.csv", mime='text/csv')
