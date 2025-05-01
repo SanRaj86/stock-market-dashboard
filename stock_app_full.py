@@ -25,7 +25,7 @@ st.sidebar.header("Portfolio Tracker")
 shares_owned = st.sidebar.number_input(f"How many shares of {ticker} do you own?", min_value=0, value=10)
 
 # Fetch Stock Data
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=86400)
 def fetch_data(ticker, start, end):
     stock = yf.Ticker(ticker)
     data = stock.history(start=start, end=end)
