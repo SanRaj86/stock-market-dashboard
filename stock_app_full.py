@@ -16,7 +16,7 @@ st.title("📈 Advanced Stock Market Dashboard")
 # Sidebar Inputs
 st.sidebar.header("Configuration")
 ticker = st.sidebar.text_input("Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
-start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2023-01-01"))
+start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2025-04-01"))
 end_date = st.sidebar.date_input("End Date", pd.to_datetime(datetime.now()))
 ma_period = st.sidebar.slider("Moving Average (days)", 5, 50, 20)
 
